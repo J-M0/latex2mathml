@@ -108,7 +108,7 @@ impl fmt::Display for Node {
                 Some(DisplayStyle::Inline) => write!(f, r#"<mstyle displaystyle="false">{}</mstyle>"#, content),
                 None => write!(f, "<mstyle>{}</mstyle>", content),
             },
-            node => write!(f, "<mtext>[PARSE ERROR: {:?}]</mtext>", node),
+            node => write!(f, "<merror>[PARSE ERROR: {:?}]</merror>", node),
         }
     }
 }
