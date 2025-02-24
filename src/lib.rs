@@ -16,7 +16,7 @@
 //! - Big operators, e.g., `\sum`, `\prod`, `\bigcup_{i = 0}^\infty`, ...
 //! - Limits and overset/underset, e.g., `\lim`, `\overset{}{}`, `\overbrace{}{}`, ...
 //! - Font styles, e.g. `\mathrm`, `\mathbf`, `\bm`, `\mathit`, `\mathsf`, `\mathscr`, `\mathbb`, `\mathfrak`, `\texttt`.
-//!   - MathML lacks calligraphic mathvariant: https://github.com/mathml-refresh/mathml/issues/61
+//!   - MathML lacks calligraphic mathvariant: <https://github.com/mathml-refresh/mathml/issues/61>
 //! - White spaces, e.g., `\!`, `\,`, `\:`, `\;`, `\ `, `\quad`, `\qquad`.
 //! - Matrix, e.g. `\begin{matrix}`, `\begin{pmatrix}`, `\begin{bmatrix}`, `\begin{vmatrix}`.
 //! - Multi-line equation `\begin{align}` (experimental).
@@ -74,7 +74,7 @@ pub(crate) mod lexer;
 pub(crate) mod parse;
 mod error;
 pub use error::LatexError;
-use std::{fmt, fs, path::Path, io::Write};
+use std::{fmt::{self, Write as _}, fs, path::Path, io::Write};
 
 /// display style
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,8 +98,10 @@ fn convert_content(latex: &str) -> Result<String, error::LatexError> {
     let nodes = p.parse()?;
 
     let mathml = nodes.iter()
-        .map(|node| format!("{}", node))
-        .collect::<String>();
+        .fold(String::new(), |mut output, node| {
+            let _ = write!(output, "{}", node);
+            output
+        });
     
     Ok(mathml)
 }
@@ -156,7 +158,7 @@ pub fn replace(input: &str) -> Result<String, error::LatexError> {
 
     // `$$` に一致するインデックスのリストを生成
     let idx = input.windows(2).enumerate()
-        .filter_map(|(i, window)| if window == &[b'$', b'$'] {
+        .filter_map(|(i, window)| if window == b"$$" {
             Some(i)
         } else { None }).collect::<Vec<usize>>();
     if idx.len()%2 != 0 {
@@ -250,7 +252,7 @@ pub fn replace(input: &str) -> Result<String, error::LatexError> {
 pub fn convert_html<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
     if path.as_ref().is_dir() {
         for entry in fs::read_dir(path)?.filter_map(Result::ok) {
-            convert_html(&entry.path())?
+            convert_html(entry.path())?
         }
     } else if path.as_ref().is_file() {
         if let Some(ext) = path.as_ref().extension() {
@@ -269,7 +271,7 @@ pub fn convert_html<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::E
 fn convert_latex<P: AsRef<Path>>(fp: P) -> Result<(), Box<dyn std::error::Error>> {
     let original = fs::read_to_string(&fp)?;
     let converted = replace(&original)?;
-    if &original != &converted {
+    if original != converted {
         let mut fp = fs::File::create(fp)?;
         fp.write_all(converted.as_bytes())?;
     }

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Write};
 use super::attribute::{Variant, Accent, LineThickness, ColumnAlign};
 use crate::DisplayStyle;
 
@@ -66,7 +66,10 @@ impl fmt::Display for Node {
             },
             Node::Frac(num, denom, lt) => write!(f, "<mfrac{}>{}{}</mfrac>", lt, num, denom),
             Node::Row(vec) => write!(f, "<mrow>{}</mrow>", 
-                vec.iter().map(|node| format!("{}", node)).collect::<String>()
+                vec.iter().fold(String::new(), |mut output, node| {
+                    let _ = write!(output, "{node}");
+                    output
+                })
             ),
             Node::Fenced{open, close, content} => {
                 write!(f, r#"<mrow><mo stretchy="true" form="prefix">{}</mo>{}<mo stretchy="true" form="postfix">{}</mo></mrow>"#, open, content, close)
