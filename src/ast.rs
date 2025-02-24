@@ -73,7 +73,7 @@ impl fmt::Display for Node {
             },
             Node::StrechedOp(stretchy, op) => write!(f, r#"<mo stretchy="{}">{}</mo>"#, stretchy, op),
             Node::OtherOperator(op) => write!(f, "<mo>{}</mo>", op),
-            Node::SizedParen{size, paren} => write!(f, r#"<mrow><mo maxsize="{0}" minsize="{0}">{1}</mro></mrow>"#, size, paren),
+            Node::SizedParen{size, paren} => write!(f, r#"<mrow><mo maxsize="{0}" minsize="{0}">{1}</mo></mrow>"#, size, paren),
             Node::Slashed(node) => match &**node {
                 Node::Letter(x, var) => write!(f, "<mi mathvariant=\"{}\">{}&#x0338;</mi>", var, x),
                 Node::Operator(x) => write!(f, "<mo>{}&#x0338;</mo>", x),
