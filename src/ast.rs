@@ -2,6 +2,14 @@ use std::fmt::{self, Write};
 use super::attribute::{Variant, Accent, LineThickness, ColumnAlign};
 use crate::DisplayStyle;
 
+
+fn html_escape<T: ToString>(t: T) -> String {
+    let mut buf = String::new();
+    let _ = pulldown_cmark_escape::escape_html(&mut buf, &t.to_string());
+    buf
+}
+
+
 /// AST node
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
@@ -38,17 +46,17 @@ pub enum Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Node::Number(number)  => write!(f, "<mn>{}</mn>", number),
+            Node::Number(number)  => write!(f, "<mn>{}</mn>", html_escape(number)),
             Node::Letter(letter, var) => match var {
-                Variant::Italic => write!(f, "<mi>{}</mi>", letter),
-                var             => write!(f, r#"<mi mathvariant="{}">{}</mi>"#, var, letter),
+                Variant::Italic => write!(f, "<mi>{}</mi>", html_escape(letter)),
+                var             => write!(f, r#"<mi mathvariant="{}">{}</mi>"#, var, html_escape(letter)),
             },
             Node::Operator(op) => if op == &'∂' {
                 write!(f, r#"<mo mathvariant="italic">∂</mo>"#)
-            } else { write!(f, r#"<mo>{}</mo>"#, op) },
+            } else { write!(f, r#"<mo>{}</mo>"#, html_escape(op)) },
             Node::Function(fun, arg) => match arg {
-                Some(arg) => write!(f, "<mi>{}</mi><mo>&#x2061;</mo>{}", fun, arg),
-                None      => write!(f, "<mi>{}</mi>", fun),
+                Some(arg) => write!(f, "<mi>{}</mi><mo>&#x2061;</mo>{}", html_escape(fun), arg),
+                None      => write!(f, "<mi>{}</mi>", html_escape(fun)),
             },
             Node::Space(space) => write!(f, r#"<mspace width="{}em"/>"#, space),
             Node::Subscript(a, b) => write!(f, "<msub>{}{}</msub>", a, b),
@@ -72,14 +80,14 @@ impl fmt::Display for Node {
                 })
             ),
             Node::Fenced{open, close, content} => {
-                write!(f, r#"<mrow><mo stretchy="true" form="prefix">{}</mo>{}<mo stretchy="true" form="postfix">{}</mo></mrow>"#, open, content, close)
+                write!(f, r#"<mrow><mo stretchy="true" form="prefix">{}</mo>{}<mo stretchy="true" form="postfix">{}</mo></mrow>"#, html_escape(open), content, html_escape(close))
             },
-            Node::StrechedOp(stretchy, op) => write!(f, r#"<mo stretchy="{}">{}</mo>"#, stretchy, op),
+            Node::StrechedOp(stretchy, op) => write!(f, r#"<mo stretchy="{}">{}</mo>"#, stretchy, html_escape(op)),
             Node::OtherOperator(op) => write!(f, "<mo>{}</mo>", op),
-            Node::SizedParen{size, paren} => write!(f, r#"<mrow><mo maxsize="{0}" minsize="{0}">{1}</mo></mrow>"#, size, paren),
+            Node::SizedParen{size, paren} => write!(f, r#"<mrow><mo maxsize="{0}" minsize="{0}">{1}</mo></mrow>"#, html_escape(size), html_escape(paren)),
             Node::Slashed(node) => match &**node {
-                Node::Letter(x, var) => write!(f, "<mi mathvariant=\"{}\">{}&#x0338;</mi>", var, x),
-                Node::Operator(x) => write!(f, "<mo>{}&#x0338;</mo>", x),
+                Node::Letter(x, var) => write!(f, "<mi mathvariant=\"{}\">{}&#x0338;</mi>", var, html_escape(x)),
+                Node::Operator(x) => write!(f, "<mo>{}&#x0338;</mo>", html_escape(x)),
                 n => write!(f, "{}", n),
             },
             Node::Matrix(content, columnalign) => {
@@ -105,13 +113,13 @@ impl fmt::Display for Node {
                 
                 write!(f, "{}", mathml)
             },
-            Node::Text(text) => write!(f, "<mtext>{}</mtext>", text),
+            Node::Text(text) => write!(f, "<mtext>{}</mtext>", html_escape(text)),
             Node::Style(display, content) => match display {
                 Some(DisplayStyle::Block)  => write!(f, r#"<mstyle displaystyle="true">{}</mstyle>"#, content),
                 Some(DisplayStyle::Inline) => write!(f, r#"<mstyle displaystyle="false">{}</mstyle>"#, content),
                 None => write!(f, "<mstyle>{}</mstyle>", content),
             },
-            node => write!(f, "<merror><mtext>[PARSE ERROR: {:?}]</mtext></merror>", node),
+            node => write!(f, "<merror><mtext>[PARSE ERROR: {}]</mtext></merror>", html_escape(format!("{node:?}"))),
         }
     }
 }
